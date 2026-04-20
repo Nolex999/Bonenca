@@ -1,129 +1,264 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ELYPTIA | TACTICAL C2 CENTER</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+    <title>ELYPTIA | ULTRON COMMAND CENTER</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #050505;
-            --accent: #00d4ff;
-            --accent-dim: rgba(0, 212, 255, 0.1);
-            --border: #1a1a1a;
+            --accent: #00f2ff;
+            --accent-dark: #006b70;
+            --glass: rgba(20, 20, 20, 0.7);
+            --border: rgba(0, 242, 255, 0.2);
             --text: #e0e0e0;
-            --text-dim: #666;
-            --danger: #ff3e3e;
-            --success: #00ff88;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto Mono', monospace; }
-        body { background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-
-        /* HEADER */
-        header {
-            height: 60px;
-            border-bottom: 2px solid var(--accent);
-            display: flex;
-            align-items: center;
-            padding: 0 30px;
-            justify-content: space-between;
-            background: rgba(10, 10, 10, 0.9);
-            z-index: 100;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'JetBrains+Mono', monospace;
+            overflow: hidden;
+            height: 100vh;
         }
 
-        .title { font-weight: 700; font-size: 20px; letter-spacing: 2px; }
-        .title span { color: var(--accent); }
+        /* Animated Background */
+        .grid {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 50px 50px;
+            perspective: 1000px;
+            transform: rotateX(60deg) translateY(-200px);
+            opacity: 0.15;
+            z-index: -1;
+        }
 
-        /* MAIN CONTENT */
-        main { display: grid; grid-template-columns: 400px 1fr; flex-grow: 1; overflow: hidden; }
+        /* Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+            backdrop-filter: blur(5px);
+        }
 
-        /* SIDEBAR / AGENTS */
+        /* Sidebar - Agents List */
         .sidebar {
-            border-right: 1px solid var(--border);
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            background: #080808;
+            gap: 15px;
+            overflow-y: auto;
         }
 
-        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text-dim); }
-
-        .agent-list { flex-grow: 1; overflow-y: auto; }
-        .agent-item {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-            transition: 0.2s;
+        .sidebar h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: var(--accent);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
         }
-        .agent-item:hover { background: var(--accent-dim); }
-        .agent-item.active { border-left: 4px solid var(--accent); background: rgba(0, 212, 255, 0.05); }
 
-        .agent-name { font-weight: 700; margin-bottom: 5px; font-size: 14px; }
-        .agent-meta { font-size: 11px; color: var(--text-dim); display: flex; flex-direction: column; gap: 3px; }
-        .agent-status { font-size: 10px; padding: 2px 6px; border-radius: 3px; background: var(--success); color: black; display: inline-block; width: fit-content; margin-top: 5px; }
-
-        /* INTERACTION CENTER */
-        .console-container { display: flex; flex-direction: column; padding: 20px; gap: 20px; height: 100%; }
-
-        .output-panel {
-            flex-grow: 1;
-            background: #000;
-            border: 1px solid var(--border);
+        .agent-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            padding: 12px;
             border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .agent-card:hover, .agent-card.active {
+            border-color: var(--accent);
+            background: rgba(0, 242, 255, 0.05);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
+        }
+
+        .agent-info { font-size: 11px; color: #888; margin-top: 5px; }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            display: inline-block; margin-right: 5px;
+            background: #555;
+        }
+        .status-dot.online { background: #00ff88; box-shadow: 0 0 8px #00ff88; }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+        }
+
+        /* Header / Stats */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 15px 25px;
+            border-radius: 12px;
+            flex: 1;
+        }
+
+        .stat-label { font-size: 10px; color: var(--accent); text-transform: uppercase; }
+        .stat-value { font-size: 20px; font-weight: bold; margin-top: 5px; }
+
+        /* Terminal Window */
+        .terminal-container {
+            background: rgba(10, 10, 10, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: rgba(0, 242, 255, 0.1);
+            padding: 10px 15px;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #terminal-output {
+            flex: 1;
             padding: 20px;
             overflow-y: auto;
             font-size: 13px;
+            line-height: 1.6;
+            color: #ccc;
         }
 
-        .log-entry { margin-bottom: 15px; border-bottom: 1px solid #111; padding-bottom: 10px; }
-        .log-header { color: var(--accent); font-size: 11px; margin-bottom: 5px; display: flex; justify-content: space-between; }
-        .log-body { color: #ccc; white-space: pre-wrap; }
+        .response-block {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid var(--accent);
+            border-radius: 4px;
+            animation: slideIn 0.4s ease-out;
+        }
 
-        /* INPUT */
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Input Area */
         .input-bar {
             display: flex;
-            background: #111;
+            gap: 10px;
+            background: var(--glass);
+            padding: 15px;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            gap: 15px;
+            border-radius: 12px;
         }
-        input { background: none; border: none; font-size: 15px; color: white; width: 100%; outline: none; }
-        .target-label { color: var(--accent); font-weight: 700; white-space: nowrap; border-right: 1px solid var(--border); padding-right: 15px; }
 
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: var(--accent); }
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            box-shadow: 0 0 20px var(--accent);
+            transform: scale(1.02);
+        }
+
+        /* Player Heads Extraction Styling */
+        .player-head {
+            width: 32px; height: 32px;
+            image-rendering: pixelated;
+            vertical-align: middle;
+            margin-right: 10px;
+            border: 1px solid var(--accent);
+        }
     </style>
 </head>
 <body>
-    <header>
-        <div class="title">ELYPTIA // CORE <span>TACTICAL_V2</span></div>
-        <div id="connection-status" style="color: var(--success)">NETWORK_ESTABLISHED</div>
-    </header>
-
-    <main>
+    <div class="grid"></div>
+    
+    <div class="app-container">
+        <!-- Dashboard Sidebar -->
         <div class="sidebar">
-            <div class="sidebar-header">FLEET_RESOURCES // <span id="agent-count">0</span> DETECTED</div>
-            <div class="agent-list" id="agent-list">
-                <!-- Agents dynamically loaded here -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="font-family: 'Orbitron', sans-serif; font-size: 24px; color: var(--accent);">ELYPTIA</h1>
+                <div style="font-size: 10px; opacity: 0.5;">CYBER COMMAND V3.0</div>
+            </div>
+            
+            <h2>Tactical Agents</h2>
+            <div id="agent-list">
+                <!-- Agents will be injected here -->
             </div>
         </div>
 
-        <div class="console-container">
-            <div class="output-panel" id="output">
-                <div class="log-entry">
-                    <div class="log-header">SYSTEM // INITIALIZED [127.0.0.1]</div>
-                    <div class="log-body">Waiting for agent uplink... Ready for tactical orders.</div>
+        <!-- Main Interface -->
+        <div class="main-content">
+            <div class="stats-bar">
+                <div class="stat-box">
+                    <div class="stat-label">Active Connections</div>
+                    <div id="active-count" class="stat-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Server Status</div>
+                    <div class="stat-value" style="color: #00ff88;">OPERATIONAL</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Global Latency</div>
+                    <div class="stat-value">12ms</div>
+                </div>
+            </div>
+
+            <div class="terminal-container">
+                <div class="terminal-header">
+                    <span>SYSTEM_LOGS.EXE</span>
+                    <span id="current-agent-status">NO AGENT SELECTED</span>
+                </div>
+                <div id="terminal-output">
+                    <div class="response-block" style="border-left-color: #555;">
+                        > Welcome to Elyptia Ultron System Control.<br>
+                        > Select an agent to begin tactical operations or enter a Target IP.
+                    </div>
                 </div>
             </div>
 
             <div class="input-bar">
-                <div class="target-label" id="current-target">TARGET: ALL</div>
-                <input type="text" id="cmdInput" placeholder="ENTER_COMMAND..." onkeypress="if(event.key === 'Enter') sendCommand()">
+                <span>></span>
+                <input type="text" id="command-input" placeholder="Enter Target IP or System Command..." autocomplete="off">
+                <button onclick="sendCommand()">EXECUTE</button>
             </div>
         </div>
-    </main>
+    </div>
 
     <script>
         const socket = io();
@@ -131,54 +266,76 @@
 
         socket.on('update_dashboard', (agents) => {
             const list = document.getElementById('agent-list');
+            const count = document.getElementById('active-count');
             list.innerHTML = '';
-            let count = 0;
             
-            for(let id in agents) {
+            let i = 0;
+            for (const id in agents) {
+                i++;
                 const agent = agents[id];
-                count++;
-                const item = document.createElement('div');
-                item.className = 'agent-item' + (selectedAgent === id ? ' active' : '');
-                item.onclick = () => selectAgent(id);
-                item.innerHTML = `
-                    <div class="agent-name">${agent.hostname}</div>
-                    <div class="agent-meta">
-                        <span>IP: ${agent.ip}</span>
-                        <span>MAC: ${agent.mac}</span>
-                        <span>OS: ${agent.os}</span>
-                    </div>
-                    <div class="agent-status" style="background: ${agent.status === 'Online' ? '#00ff88' : '#ff3e3e'}">${agent.status}</div>
+                const div = document.createElement('div');
+                div.className = `agent-card ${selectedAgent === id ? 'active' : ''}`;
+                div.onclick = () => {
+                    selectedAgent = id;
+                    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+                    div.classList.add('active');
+                    document.getElementById('current-agent-status').innerText = `TARGETING: ${id}`;
+                };
+                
+                div.innerHTML = `
+                    <div><span class="status-dot online"></span> ${id}</div>
+                    <div class="agent-info">${agent.hostname} | ${agent.ip}</div>
                 `;
-                list.appendChild(item);
+                list.appendChild(div);
             }
-            document.getElementById('agent-count').innerText = count;
+            count.innerText = i;
         });
 
-        function selectAgent(id) {
-            selectedAgent = id;
-            document.getElementById('current-target').innerText = `TARGET: ${id.split('_')[0]}`;
-            // Refresh list styles
-            socket.emit('request_update'); // Force update list classes
-        }
+        socket.on('display_response', (data) => {
+            const output = document.getElementById('terminal-output');
+            const block = document.createElement('div');
+            block.className = 'response-block';
+            
+            // Formatage intelligent pour les joueurs Minecraft (Minotar)
+            let formattedOutput = data.output.replace(/ID: (.*?) \| UUID: (.*?)\n/g, (match, name, uuid) => {
+                return `<div><img src="https://minotar.net/avatar/${name}/32" class="player-head"> <b>${name}</b> <span style="font-size:10px; opacity:0.5;">(${uuid})</span></div>`;
+            });
+
+            block.innerHTML = `
+                <div style="font-size: 10px; color: var(--accent); margin-bottom: 5px;">[${data.time}] RESPONSE FROM ${data.id}:</div>
+                <div style="white-space: pre-wrap;">${formattedOutput}</div>
+            `;
+            output.appendChild(block);
+            output.scrollTop = output.scrollHeight;
+            
+            // Effect sonore ou flash ? (Optionnel)
+            gsap.from(block, { duration: 0.5, x: -20, opacity: 0 });
+        });
 
         function sendCommand() {
-            const input = document.getElementById('cmdInput');
+            const input = document.getElementById('command-input');
             const cmd = input.value;
-            if(!cmd) return;
+            if (!cmd) return;
 
-            socket.emit('dispatch_command', { target: selectedAgent, command: cmd });
+            socket.emit('dispatch_command', {
+                target: selectedAgent,
+                command: cmd
+            });
+
+            // Echo local
+            const output = document.getElementById('terminal-output');
+            const echo = document.createElement('div');
+            echo.style.color = "#555";
+            echo.style.marginBottom = "10px";
+            echo.innerHTML = `> Sent to ${selectedAgent}: ${cmd}`;
+            output.appendChild(echo);
+            output.scrollTop = output.scrollHeight;
+
             input.value = '';
         }
 
-        socket.on('display_response', (data) => {
-            const output = document.getElementById('output');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerHTML = `
-                <div class="log-header">RESPONSE // ${data.id} [${data.time}]</div>
-                <div class="log-body">${data.output}</div>
-            `;
-            output.prepend(entry);
+        document.getElementById('command-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendCommand();
         });
     </script>
 </body>
