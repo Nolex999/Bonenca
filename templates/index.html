@@ -68,8 +68,24 @@
         }
 
         #terminal-output {
-            flex: 1; padding: 15px; overflow-y: auto;
+            flex: 1; padding: 15px; 
+            overflow-y: scroll; /* Force le scroll */
             font-size: 13px; line-height: 1.5;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) transparent;
+        }
+
+        /* Custom Scrollbar for Chrome/Safari */
+        #terminal-output::-webkit-scrollbar {
+            width: 6px;
+        }
+        #terminal-output::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        #terminal-output::-webkit-scrollbar-thumb {
+            background-color: var(--accent);
+            border-radius: 10px;
+            box-shadow: 0 0 10px var(--accent);
         }
 
         .response-block {
