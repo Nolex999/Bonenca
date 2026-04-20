@@ -1,6 +1,6 @@
 flask
 flask-socketio
-eventlet==0.35.2
+eventlet>=0.40.3
 gunicorn
 psutil
 requests
