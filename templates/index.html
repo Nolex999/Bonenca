@@ -3,169 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ELYPTIA | INFRASTRUCTURE ANALYST</title>
+    <title>ELYPTIA | PRECISION NETWORK SCANNER</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --bg: #030303;
-            --accent: #ff0055; /* Rouge Crimson pour le mode Infra */
-            --border: rgba(255, 0, 85, 0.2);
-            --glass: rgba(15, 15, 15, 0.9);
-            --text: #ffffff;
-            --warning: #ffaa00;
+            --bg: #050505;
+            --accent: #00f2ff; /* Cyan / Teal pour Precision Scan */
+            --border: rgba(0, 242, 255, 0.2);
+            --glass: rgba(10, 10, 10, 0.9);
+            --text: #e0e0e0;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: 'JetBrains+Mono', monospace;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .grid {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 60px 60px; transform: rotateX(60deg) translateY(-200px);
-            opacity: 0.1; z-index: -1;
+            font-family: 'JetBrains Mono', monospace;
+            height: 100vh; overflow: hidden;
         }
 
         .app-container {
-            display: grid; grid-template-columns: 320px 1fr;
-            height: 100vh; padding: 20px; gap: 20px;
-            overflow: hidden; /* Empêche le scroll global */
+            display: grid; grid-template-columns: 300px 1fr;
+            height: 100vh; padding: 15px; gap: 15px; overflow: hidden;
         }
 
-        /* Sidebar */
         .sidebar {
             background: var(--glass);
             border: 1px solid var(--border);
-            border-radius: 12px; padding: 20px;
-            display: flex; flex-direction: column; gap: 15px;
-            overflow-y: auto;
-            box-shadow: 0 0 20px rgba(255, 0, 85, 0.05);
-            min-height: 0;
+            border-radius: 8px; padding: 15px;
+            display: flex; flex-direction: column; gap: 10px;
+            min-height: 0; overflow-y: auto;
         }
 
         .agent-card {
-            background: rgba(255,255,255,0.03); padding: 12px;
-            border-radius: 8px; cursor: pointer; border: 1px solid transparent;
-            transition: 0.3s;
-            flex-shrink: 0;
+            background: rgba(255,255,255,0.02); padding: 10px;
+            border-radius: 4px; cursor: pointer; border-left: 3px solid transparent;
+            transition: 0.2s; font-size: 11px; flex-shrink: 0;
         }
-        .agent-card.active { border-color: var(--accent); background: rgba(255, 0, 85, 0.1); }
+        .agent-card.active { border-left-color: var(--accent); background: rgba(0, 242, 255, 0.05); }
 
-        /* Main View */
-        .main-content { 
-            display: grid; 
-            grid-template-rows: auto 1fr auto; 
-            gap: 20px; 
-            height: 100%; 
-            min-height: 0; /* CRUCIAL pour bloquer l'expansion grid */
+        .main-content {
+            display: grid; grid-template-rows: auto 1fr auto; gap: 15px; min-height: 0;
         }
 
         .terminal-container {
-            background: rgba(5, 5, 5, 0.95);
+            background: rgba(0, 0, 0, 0.9);
             border: 1px solid var(--border);
-            border-radius: 12px; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden;
-            min-height: 0; /* Empêche le container de pousser les autres rows */
+            border-radius: 8px; display: flex; flex-direction: column; min-height: 0;
+            box-shadow: inset 0 0 30px rgba(0, 242, 255, 0.05);
         }
 
         .terminal-header {
-            background: rgba(255, 0, 85, 0.1); padding: 10px 15px;
-            font-size: 11px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between;
-            text-transform: uppercase; letter-spacing: 1px;
-            flex-shrink: 0;
+            padding: 8px 15px; background: rgba(0, 242, 255, 0.05);
+            font-size: 10px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; text-transform: uppercase;
         }
 
         #terminal-output {
-            flex: 1; padding: 15px; 
-            overflow-y: auto; /* Scroll interne */
-            font-size: 13px; line-height: 1.5;
-            scrollbar-width: thin;
-            scrollbar-color: var(--accent) transparent;
+            flex: 1; padding: 15px; overflow-y: auto;
+            font-size: 13px; line-height: 1.4; color: #fff;
         }
-
-        /* Custom Scrollbar */
-        #terminal-output::-webkit-scrollbar { width: 6px; }
-        #terminal-output::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
 
         .response-block {
-            margin-bottom: 20px; padding: 15px;
-            background: rgba(255, 255, 255, 0.02);
-            border-left: 3px solid var(--accent);
-            white-space: pre-wrap;
-            animation: fadeIn 0.3s ease-in;
+            margin-bottom: 15px; white-space: pre-wrap;
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .alert-item { color: var(--warning); font-weight: bold; }
-        .success-item { color: #00ff88; }
-        .infra-header { color: var(--accent); font-weight: bold; border-bottom: 1px solid var(--border); margin: 10px 0; padding-bottom: 5px; }
-
-        /* Input Zone */
         .input-bar {
-            display: flex; gap: 15px; background: var(--glass);
-            padding: 15px; border: 1px solid var(--border); border-radius: 12px;
+            display: flex; gap: 10px; background: var(--glass);
+            padding: 12px; border: 1px solid var(--border); border-radius: 8px;
         }
 
         input {
             flex: 1; background: transparent; border: none;
-            color: var(--accent); font-family: inherit; font-size: 14px; outline: none;
+            color: var(--accent); outline: none; font-family: inherit; font-size: 14px;
         }
-
         button {
-            background: var(--accent); color: #fff; border: none;
-            padding: 8px 25px; border-radius: 4px; font-weight: bold;
-            cursor: pointer; font-family: 'Orbitron', sans-serif;
-            transition: 0.3s;
+            background: var(--accent); color: #000; border: none; padding: 6px 20px;
+            border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Orbitron';
         }
-        button:hover { box-shadow: 0 0 15px var(--accent); transform: translateY(-2px); }
-
     </style>
 </head>
 <body>
-    <div class="grid"></div>
     <div class="app-container">
         <div class="sidebar">
-            <h1 style="font-family: 'Orbitron'; font-size: 18px; color: var(--accent); text-align: center; margin-bottom: 10px;">ELYPTIA INFRA</h1>
-            <div style="font-size: 10px; opacity: 0.5; text-align: center; margin-bottom: 20px;">V10.0 TECHNICAL ANALYST</div>
+            <h2 style="font-family:'Orbitron'; color:var(--accent); font-size:16px; margin-bottom:10px;">ELYPTIA PRÉCISION</h2>
             <div id="agent-list"></div>
         </div>
 
         <div class="main-content">
-            <div style="background: var(--glass); padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
-                <div style="display: flex; justify-content: space-between;">
-                    <div id="active-target">SCANNER STATUS: <span style="color: #00ff88;">READY</span></div>
-                    <div id="conn-status" style="color: var(--accent);">CONNECTED TO CLOUD</div>
-                </div>
-                <!-- RCE Progress Bar -->
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; display: flex;">
-                    <div id="rce-bar" style="width: 0%; height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 1s ease-in-out;"></div>
-                </div>
-                <div style="font-size: 9px; text-transform: uppercase; color: var(--accent); letter-spacing: 1px;">RCE PROBABILITY INDEX</div>
+            <div style="background:var(--glass); border:1px solid var(--border); padding:10px 15px; border-radius:8px; display:flex; justify-content:space-between; font-size:11px;">
+                <div id="active-target">SCANNER: <span style="color:var(--accent);">STANDBY</span></div>
+                <div id="conn-status" style="color:#00ff88;">READY_FOR_DEPLOYMENT</div>
             </div>
 
             <div class="terminal-container">
                 <div class="terminal-header">
-                    <span>SERVER_INFRASTRUCTURE_REPORT.LOG</span>
-                    <span>GOD-MODE ACTIVE</span>
+                    <span>Precision_Network_Analysis_V14.exe</span>
+                    <span id="timestamp">TIMESTAMP: --:--:--</span>
                 </div>
                 <div id="terminal-output">
-                    <div class="response-block" style="border-color: #555;">> [SYSTEM] Elyptia Infrastructure Engine v10.0 initialized.<br>> Entrez une IP pour une analyse technique profonde.</div>
+                    <div class="response-block">> [BOOT] Elyptia Precision Engine v14.0 loaded.<br>> System monitoring active. Enter target IP/Domain for deep reconnaissance.</div>
                 </div>
             </div>
 
             <div class="input-bar">
-                <input type="text" id="cmd-input" placeholder="IP Cible (ex: 82.64.x.x) pour extraction technique..." autocomplete="off">
-                <button id="send-btn">ANALYZE</button>
+                <input type="text" id="cmd-input" placeholder="IP Cible / Domaine pour audit complet..." autocomplete="off">
+                <button id="send-btn">SCAN</button>
             </div>
         </div>
     </div>
@@ -174,70 +119,19 @@
         const socket = io();
         let selectedAgent = 'all';
 
-        function addLog(msg, favicon = null) {
+        function updateTime() {
+            document.getElementById('timestamp').innerHTML = "TIMESTAMP: " + new Date().toLocaleTimeString();
+        }
+        setInterval(updateTime, 1000);
+
+        function addLog(msg) {
             const out = document.getElementById('terminal-output');
             const div = document.createElement('div');
             div.className = 'response-block';
-            
-            // Affichage de la Favicon si disponible
-            let faviconHtml = "";
-            if (favicon) {
-                faviconHtml = `<img src="${favicon}" style="width: 64px; height: 64px; float: right; margin: 10px; border: 1px solid var(--accent); background: #000;">`;
-            }
-
-            // Formatage spécial pour le serveur (Niveaux de danger)
-            let html = msg.replace(/💀 TYPE: (.*?)\n/g, '<div style="background:rgba(255,0,85,0.1); padding:10px; border:1px solid var(--accent); margin:10px 0;"><b style="color:var(--accent); font-size:1.1em;">💀 EXPLOIT: $1</b>');
-            html = html.replace(/➤ IMPACT: (.*?)\n/g, '<div style="color:var(--warning); font-size:0.9em; margin:5px 0;">➤ IMPACT: $1</div>');
-            html = html.replace(/➤ PROCÉDURE :\n/g, '<div style="color:#00ff88; margin-top:10px;">PROCÉDURE D\'EXPLOITATION :</div>');
-            
-            html = html.replace(/🏆 (.*?)\n/g, '<div class="infra-header" style="color:#00ff88; font-size:1.2em;">🏆 $1</div>');
-            html = html.replace(/🔎 RCE PROBABILITY : (.*?)\n/g, '<div style="background:var(--accent); color:#000; padding:5px 10px; font-weight:bold; display:inline-block; margin:10px 0;">🔥 RCE THREAT: $1</div>');
-            
-            html = html.replace(/\[(.*?)\]/g, '<span style="color:var(--accent);">[$1]</span>');
-            html = html.replace(/├─ (.*?)\n/g, '<span style="opacity:0.8;">├─ $1</span>\n');
-            
-            div.innerHTML = faviconHtml + html;
+            div.innerHTML = msg.replace(/\[(.*?)\]/g, '<span style="color:var(--accent);">[$1]</span>');
             out.appendChild(div);
             out.scrollTop = out.scrollHeight;
         }
-
-        function doSend() {
-            const input = document.getElementById('cmd-input');
-            const btn = document.getElementById('send-btn');
-            const val = input.value.trim();
-            
-            if (!val || !socket.connected) {
-                if (!socket.connected) addLog("> [ERROR] Désynchronisation Cloud... Tentative de reconnexion.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = "SENDING...";
-
-            socket.emit('dispatch_command', {
-                target: selectedAgent,
-                command: val
-            });
-            
-            addLog(`> Envoi de la commande vers ${selectedAgent}: ${val}`);
-            input.value = '';
-            
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = "ANALYZE";
-                input.focus();
-            }, 500);
-        }
-
-        socket.on('connect', () => {
-            document.getElementById('conn-status').innerHTML = "CONNECTED TO CLOUD";
-            document.getElementById('conn-status').style.color = "#00ff88";
-        });
-
-        socket.on('disconnect', () => {
-            document.getElementById('conn-status').innerHTML = "DISCONNECTED";
-            document.getElementById('conn-status').style.color = "#ff0055";
-        });
 
         socket.on('update_dashboard', (agents) => {
             const list = document.getElementById('agent-list');
@@ -251,29 +145,27 @@
                     document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
                     div.classList.add('active');
                 };
-                div.innerHTML = `<b>${id}</b><br><span style="font-size:10px; opacity:0.6;">${agents[id].hostname}</span>`;
+                div.innerHTML = `<b>${id}</b><br>${agents[id].hostname}`;
                 list.appendChild(div);
+                if (selectedAgent === 'all') div.click();
             }
         });
 
         socket.on('display_response', (data) => {
-            addLog(data.output, data.favicon);
-            if (data.rce_prob !== undefined) {
-                document.getElementById('rce-bar').style.width = data.rce_prob + '%';
-            }
+            addLog(data.output);
         });
 
-        document.getElementById('send-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            doSend();
-        });
+        function doSend() {
+            const input = document.getElementById('cmd-input');
+            const val = input.value.trim();
+            if (!val || !socket.connected) return;
+            socket.emit('dispatch_command', { target: selectedAgent, command: val });
+            addLog(`> Initiating Precision Scan on ${val}...`);
+            input.value = '';
+        }
 
-        document.getElementById('cmd-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                doSend();
-            }
-        });
+        document.getElementById('send-btn').onclick = doSend;
+        document.getElementById('cmd-input').onkeypress = (e) => { if(e.key === 'Enter') doSend(); };
     </script>
 </body>
 </html>
