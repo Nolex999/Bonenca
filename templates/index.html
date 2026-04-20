@@ -35,6 +35,7 @@
         .app-container {
             display: grid; grid-template-columns: 320px 1fr;
             height: 100vh; padding: 20px; gap: 20px;
+            overflow: hidden; /* Empêche le scroll global */
         }
 
         /* Sidebar */
@@ -45,22 +46,34 @@
             display: flex; flex-direction: column; gap: 15px;
             overflow-y: auto;
             box-shadow: 0 0 20px rgba(255, 0, 85, 0.05);
+            min-height: 0;
         }
 
         .agent-card {
             background: rgba(255,255,255,0.03); padding: 12px;
             border-radius: 8px; cursor: pointer; border: 1px solid transparent;
             transition: 0.3s;
+            flex-shrink: 0;
         }
         .agent-card.active { border-color: var(--accent); background: rgba(255, 0, 85, 0.1); }
 
         /* Main View */
-        .main-content { display: grid; grid-template-rows: auto 1fr auto; gap: 20px; }
+        .main-content { 
+            display: grid; 
+            grid-template-rows: auto 1fr auto; 
+            gap: 20px; 
+            height: 100%; 
+            min-height: 0; /* CRUCIAL pour bloquer l'expansion grid */
+        }
 
         .terminal-container {
             background: rgba(5, 5, 5, 0.95);
             border: 1px solid var(--border);
-            border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;
+            border-radius: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden;
+            min-height: 0; /* Empêche le container de pousser les autres rows */
         }
 
         .terminal-header {
@@ -68,11 +81,12 @@
             font-size: 11px; border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between;
             text-transform: uppercase; letter-spacing: 1px;
+            flex-shrink: 0;
         }
 
         #terminal-output {
             flex: 1; padding: 15px; 
-            overflow-y: scroll;
+            overflow-y: auto; /* Scroll interne */
             font-size: 13px; line-height: 1.5;
             scrollbar-width: thin;
             scrollbar-color: var(--accent) transparent;
@@ -177,6 +191,44 @@
             out.scrollTop = out.scrollHeight;
         }
 
+        function doSend() {
+            const input = document.getElementById('cmd-input');
+            const btn = document.getElementById('send-btn');
+            const val = input.value.trim();
+            
+            if (!val || !socket.connected) {
+                if (!socket.connected) addLog("> [ERROR] Désynchronisation Cloud... Tentative de reconnexion.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = "SENDING...";
+
+            socket.emit('dispatch_command', {
+                target: selectedAgent,
+                command: val
+            });
+            
+            addLog(`> Envoi de la commande vers ${selectedAgent}: ${val}`);
+            input.value = '';
+            
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = "ANALYZE";
+                input.focus();
+            }, 500);
+        }
+
+        socket.on('connect', () => {
+            document.getElementById('conn-status').innerHTML = "CONNECTED TO CLOUD";
+            document.getElementById('conn-status').style.color = "#00ff88";
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('conn-status').innerHTML = "DISCONNECTED";
+            document.getElementById('conn-status').style.color = "#ff0055";
+        });
+
         socket.on('update_dashboard', (agents) => {
             const list = document.getElementById('agent-list');
             list.innerHTML = '';
@@ -197,20 +249,6 @@
         socket.on('display_response', (data) => {
             addLog(data.output, data.favicon);
         });
-
-        function doSend() {
-            const input = document.getElementById('cmd-input');
-            const val = input.value.trim();
-            if (!val) return;
-
-            socket.emit('dispatch_command', {
-                target: selectedAgent,
-                command: val
-            });
-            
-            addLog(`> Requesting Deep Audit from ${selectedAgent} on ${val}...`);
-            input.value = '';
-        }
 
         document.getElementById('send-btn').addEventListener('click', (e) => {
             e.preventDefault();
