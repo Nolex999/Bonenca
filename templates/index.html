@@ -141,9 +141,16 @@
         </div>
 
         <div class="main-content">
-            <div style="background: var(--glass); padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 12px;">
-                <div id="active-target">SCANNER STATUS: <span style="color: #00ff88;">READY</span></div>
-                <div id="conn-status" style="color: var(--accent);">CONNECTED TO CLOUD</div>
+            <div style="background: var(--glass); padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <div id="active-target">SCANNER STATUS: <span style="color: #00ff88;">READY</span></div>
+                    <div id="conn-status" style="color: var(--accent);">CONNECTED TO CLOUD</div>
+                </div>
+                <!-- RCE Progress Bar -->
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; display: flex;">
+                    <div id="rce-bar" style="width: 0%; height: 100%; background: var(--accent); box-shadow: 0 0 10px var(--accent); transition: width 1s ease-in-out;"></div>
+                </div>
+                <div style="font-size: 9px; text-transform: uppercase; color: var(--accent); letter-spacing: 1px;">RCE PROBABILITY INDEX</div>
             </div>
 
             <div class="terminal-container">
@@ -179,10 +186,13 @@
             }
 
             // Formatage spécial pour le serveur (Niveaux de danger)
-            let html = msg.replace(/🔥 (.*?)\n/g, '<div class="alert-item" style="color:#ff0000; font-size:1.1em; text-shadow:0 0 10px #ff0000;">🔥 $1</div>');
-            html = html.replace(/💀 (.*?)\n/g, '<div class="alert-item" style="color:#ff0000;">💀 $1</div>');
-            html = html.replace(/🚨 (.*?)\n/g, '<div class="alert-item" style="color:var(--warning);">🚨 $1</div>');
+            let html = msg.replace(/💀 TYPE: (.*?)\n/g, '<div style="background:rgba(255,0,85,0.1); padding:10px; border:1px solid var(--accent); margin:10px 0;"><b style="color:var(--accent); font-size:1.1em;">💀 EXPLOIT: $1</b>');
+            html = html.replace(/➤ IMPACT: (.*?)\n/g, '<div style="color:var(--warning); font-size:0.9em; margin:5px 0;">➤ IMPACT: $1</div>');
+            html = html.replace(/➤ PROCÉDURE :\n/g, '<div style="color:#00ff88; margin-top:10px;">PROCÉDURE D\'EXPLOITATION :</div>');
+            
             html = html.replace(/🏆 (.*?)\n/g, '<div class="infra-header" style="color:#00ff88; font-size:1.2em;">🏆 $1</div>');
+            html = html.replace(/🔎 RCE PROBABILITY : (.*?)\n/g, '<div style="background:var(--accent); color:#000; padding:5px 10px; font-weight:bold; display:inline-block; margin:10px 0;">🔥 RCE THREAT: $1</div>');
+            
             html = html.replace(/\[(.*?)\]/g, '<span style="color:var(--accent);">[$1]</span>');
             html = html.replace(/├─ (.*?)\n/g, '<span style="opacity:0.8;">├─ $1</span>\n');
             
@@ -248,6 +258,9 @@
 
         socket.on('display_response', (data) => {
             addLog(data.output, data.favicon);
+            if (data.rce_prob !== undefined) {
+                document.getElementById('rce-bar').style.width = data.rce_prob + '%';
+            }
         });
 
         document.getElementById('send-btn').addEventListener('click', (e) => {
