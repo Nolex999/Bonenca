@@ -165,7 +165,10 @@
             }
 
             // Formatage spécial pour le serveur (Niveaux de danger)
-            let html = msg.replace(/⚠️ (.*?)\n/g, '<div class="alert-item">⚠️ $1</div>');
+            let html = msg.replace(/🔥 (.*?)\n/g, '<div class="alert-item" style="color:#ff0000; font-size:1.1em; text-shadow:0 0 10px #ff0000;">🔥 $1</div>');
+            html = html.replace(/💀 (.*?)\n/g, '<div class="alert-item" style="color:#ff0000;">💀 $1</div>');
+            html = html.replace(/🚨 (.*?)\n/g, '<div class="alert-item" style="color:var(--warning);">🚨 $1</div>');
+            html = html.replace(/🏆 (.*?)\n/g, '<div class="infra-header" style="color:#00ff88; font-size:1.2em;">🏆 $1</div>');
             html = html.replace(/\[(.*?)\]/g, '<span style="color:var(--accent);">[$1]</span>');
             html = html.replace(/├─ (.*?)\n/g, '<span style="opacity:0.8;">├─ $1</span>\n');
             
