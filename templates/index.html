@@ -3,169 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ELYPTIA | PRECISION NETWORK SCANNER</title>
+    <title>Elyptia — Precision Network Scanner</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #050505;
-            --accent: #00f2ff; /* Cyan / Teal pour Precision Scan */
-            --border: rgba(0, 242, 255, 0.2);
-            --glass: rgba(10, 10, 10, 0.9);
-            --text: #e0e0e0;
+            --bg-base:    #0b0c0e;
+            --bg-surface: #111316;
+            --bg-raised:  #181a1d;
+            --bg-hover:   #1e2024;
+
+            --border:     rgba(255,255,255,0.07);
+            --border-md:  rgba(255,255,255,0.11);
+
+            --text-primary:   #e8e9ea;
+            --text-secondary: rgba(232,233,234,0.50);
+            --text-muted:     rgba(232,233,234,0.28);
+
+            --accent:     #4b89dc;
+            --accent-dim: rgba(75,137,220,0.12);
+            --accent-txt: #7aabee;
+
+            --success:    #3d9e6a;
+            --warning:    #c99035;
+            --danger:     #c95050;
+
+            --radius-sm:  4px;
+            --radius-md:  6px;
+            --radius-lg:  8px;
+
+            --mono: 'IBM Plex Mono', monospace;
+            --sans: 'IBM Plex Sans', sans-serif;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'JetBrains Mono', monospace;
-            height: 100vh; overflow: hidden;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--sans);
+            font-size: 13px;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .app-container {
-            display: grid; grid-template-columns: 300px 1fr;
-            height: 100vh; padding: 15px; gap: 15px; overflow: hidden;
+        /* ─── App shell ─────────────────────────────────── */
+        .shell {
+            display: grid;
+            grid-template-rows: 44px 1fr;
+            height: 100vh;
         }
 
+        /* ─── Top bar ────────────────────────────────────── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 18px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            user-select: none;
+        }
+
+        .topbar-logo {
+            font-family: var(--mono);
+            font-weight: 500;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            color: var(--text-primary);
+        }
+
+        .topbar-logo span {
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .topbar-divider {
+            width: 1px;
+            height: 16px;
+            background: var(--border-md);
+        }
+
+        .topbar-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.03em;
+        }
+
+        .topbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .status-dot.idle { background: var(--text-muted); }
+        .status-dot.scanning { background: var(--accent); }
+
+        #ts {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.03em;
+        }
+
+        /* ─── Content ────────────────────────────────────── */
+        .content {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar ────────────────────────────────────── */
         .sidebar {
-            background: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: 8px; padding: 15px;
-            display: flex; flex-direction: column; gap: 10px;
-            min-height: 0; overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            overflow: hidden;
         }
+
+        .sidebar-header {
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .agent-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .agent-list::-webkit-scrollbar { width: 4px; }
+        .agent-list::-webkit-scrollbar-track { background: transparent; }
+        .agent-list::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 2px; }
 
         .agent-card {
-            background: rgba(255,255,255,0.02); padding: 10px;
-            border-radius: 4px; cursor: pointer; border-left: 3px solid transparent;
-            transition: 0.2s; font-size: 11px; flex-shrink: 0;
-        }
-        .agent-card.active { border-left-color: var(--accent); background: rgba(0, 242, 255, 0.05); }
-
-        .main-content {
-            display: grid; grid-template-rows: auto 1fr auto; gap: 15px; min-height: 0;
+            padding: 9px 10px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background 0.12s;
+            border: 1px solid transparent;
         }
 
-        .terminal-container {
-            background: rgba(0, 0, 0, 0.9);
+        .agent-card:hover {
+            background: var(--bg-hover);
+        }
+
+        .agent-card.active {
+            background: var(--accent-dim);
+            border-color: rgba(75,137,220,0.20);
+        }
+
+        .agent-card-name {
+            font-weight: 500;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .agent-card.active .agent-card-name {
+            color: var(--accent-txt);
+        }
+
+        .agent-card-host {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .sidebar-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-footer-label {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* ─── Main ───────────────────────────────────────── */
+        .main {
+            display: grid;
+            grid-template-rows: 1fr auto;
+            overflow: hidden;
+            background: var(--bg-base);
+        }
+
+        /* ─── Terminal ───────────────────────────────────── */
+        .terminal-wrap {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            height: 38px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .terminal-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .terminal-process {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .terminal-badge {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 3px;
+            background: var(--bg-hover);
+            color: var(--text-muted);
             border: 1px solid var(--border);
-            border-radius: 8px; display: flex; flex-direction: column; min-height: 0;
-            box-shadow: inset 0 0 30px rgba(0, 242, 255, 0.05);
+            font-family: var(--mono);
         }
 
-        .terminal-header {
-            padding: 8px 15px; background: rgba(0, 242, 255, 0.05);
-            font-size: 10px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; text-transform: uppercase;
+        .terminal-target {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-muted);
         }
 
-        #terminal-output {
-            flex: 1; padding: 15px; overflow-y: auto;
-            font-size: 13px; line-height: 1.4; color: #fff;
+        .terminal-target b {
+            color: var(--accent-txt);
+            font-weight: 500;
         }
 
-        .response-block {
-            margin-bottom: 15px; white-space: pre-wrap;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;
+        #output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 20px;
+            font-family: var(--mono);
+            font-size: 12.5px;
+            line-height: 1.65;
+            color: #c8cdd5;
         }
 
-        .input-bar {
-            display: flex; gap: 10px; background: var(--glass);
-            padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+        #output::-webkit-scrollbar { width: 5px; }
+        #output::-webkit-scrollbar-track { background: transparent; }
+        #output::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 2px; }
+
+        .entry {
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
         }
 
-        input {
-            flex: 1; background: transparent; border: none;
-            color: var(--accent); outline: none; font-family: inherit; font-size: 14px;
+        .entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
         }
-        button {
-            background: var(--accent); color: #000; border: none; padding: 6px 20px;
-            border-radius: 4px; font-weight: bold; cursor: pointer; font-family: 'Orbitron';
+
+        .entry-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 10px;
         }
+
+        .entry-ts {
+            color: var(--text-muted);
+            font-family: var(--mono);
+        }
+
+        .entry-label {
+            color: var(--accent-txt);
+            font-size: 10px;
+            letter-spacing: 0.04em;
+        }
+
+        .entry-label.boot { color: var(--text-muted); }
+        .entry-label.info { color: var(--accent-txt); }
+        .entry-label.warn { color: var(--warning); }
+        .entry-label.err  { color: var(--danger); }
+
+        .entry-body {
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .entry-body .hl {
+            color: var(--accent-txt);
+        }
+
+        /* ─── Input bar ──────────────────────────────────── */
+        .inputbar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-surface);
+        }
+
+        .input-prefix {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 0 10px 0 2px;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        #cmd {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--text-primary);
+            caret-color: var(--accent);
+        }
+
+        #cmd::placeholder {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .btn-scan {
+            flex-shrink: 0;
+            padding: 6px 16px;
+            border-radius: var(--radius-sm);
+            background: var(--accent);
+            border: none;
+            font-family: var(--sans);
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            letter-spacing: 0.03em;
+            transition: opacity 0.12s, transform 0.08s;
+        }
+
+        .btn-scan:hover { opacity: 0.85; }
+        .btn-scan:active { transform: scale(0.97); }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="sidebar">
-            <h2 style="font-family:'Orbitron'; color:var(--accent); font-size:16px; margin-bottom:10px;">ELYPTIA PRÉCISION</h2>
-            <div id="agent-list"></div>
-        </div>
+<div class="shell">
 
-        <div class="main-content">
-            <div style="background:var(--glass); border:1px solid var(--border); padding:10px 15px; border-radius:8px; display:flex; justify-content:space-between; font-size:11px;">
-                <div id="active-target">SCANNER: <span style="color:var(--accent);">STANDBY</span></div>
-                <div id="conn-status" style="color:#00ff88;">READY_FOR_DEPLOYMENT</div>
+    <!-- Top bar -->
+    <div class="topbar">
+        <div class="topbar-logo">Elyptia <span>/ Precision Scanner</span></div>
+        <div class="topbar-divider"></div>
+        <div class="topbar-label">v14.0</div>
+        <div class="topbar-right">
+            <div class="status-pill">
+                <div class="status-dot" id="dot"></div>
+                <span id="conn-label">Ready</span>
             </div>
-
-            <div class="terminal-container">
-                <div class="terminal-header">
-                    <span>Precision_Network_Analysis_V14.exe</span>
-                    <span id="timestamp">TIMESTAMP: --:--:--</span>
-                </div>
-                <div id="terminal-output">
-                    <div class="response-block">> [BOOT] Elyptia Precision Engine v14.0 loaded.<br>> System monitoring active. Enter target IP/Domain for deep reconnaissance.</div>
-                </div>
-            </div>
-
-            <div class="input-bar">
-                <input type="text" id="cmd-input" placeholder="IP Cible / Domaine pour audit complet..." autocomplete="off">
-                <button id="send-btn">SCAN</button>
-            </div>
+            <div id="ts">00:00:00</div>
         </div>
     </div>
 
-    <script>
-        const socket = io();
-        let selectedAgent = 'all';
+    <div class="content">
 
-        function updateTime() {
-            document.getElementById('timestamp').innerHTML = "TIMESTAMP: " + new Date().toLocaleTimeString();
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Agents</div>
+            </div>
+            <div class="agent-list" id="agent-list"></div>
+            <div class="sidebar-footer">
+                <div class="sidebar-footer-label" id="agent-count">0 agents connected</div>
+            </div>
+        </div>
+
+        <!-- Main panel -->
+        <div class="main">
+            <div class="terminal-wrap">
+                <div class="terminal-bar">
+                    <div class="terminal-bar-left">
+                        <span class="terminal-process">network_analysis.exe</span>
+                        <span class="terminal-badge">deep-recon</span>
+                    </div>
+                    <div class="terminal-target">
+                        Target: <b id="target-display">none selected</b>
+                    </div>
+                </div>
+                <div id="output">
+                    <div class="entry">
+                        <div class="entry-meta">
+                            <span class="entry-ts" id="boot-ts">--:--:--</span>
+                            <span class="entry-label boot">BOOT</span>
+                        </div>
+                        <div class="entry-body">Elyptia Precision Engine v14.0 initialized.
+System ready. Enter target IP or domain to begin analysis.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="inputbar">
+                <span class="input-prefix">→</span>
+                <input id="cmd" type="text" placeholder="Target IP / domain…" autocomplete="off" spellcheck="false">
+                <button class="btn-scan" id="scan-btn">Scan</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    let selectedAgent = 'all';
+
+    /* clock */
+    function tick() {
+        const t = new Date().toLocaleTimeString('fr-FR', { hour12: false });
+        document.getElementById('ts').textContent = t;
+        document.getElementById('boot-ts').textContent = t;
+    }
+    tick(); setInterval(tick, 1000);
+
+    /* log entry */
+    function addEntry(body, label = 'INFO') {
+        const out = document.getElementById('output');
+        const ts  = new Date().toLocaleTimeString('fr-FR', { hour12: false });
+
+        const labelClass = { BOOT:'boot', INFO:'info', WARN:'warn', ERR:'err' }[label] || 'info';
+
+        const highlighted = body.replace(/\[([^\]]+)\]/g,
+            '<span class="hl">[$1]</span>');
+
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `
+            <div class="entry-meta">
+                <span class="entry-ts">${ts}</span>
+                <span class="entry-label ${labelClass}">${label}</span>
+            </div>
+            <div class="entry-body">${highlighted}</div>`;
+
+        out.appendChild(div);
+        out.scrollTop = out.scrollHeight;
+    }
+
+    /* socket events */
+    socket.on('connect', () => {
+        document.getElementById('dot').className = 'status-dot';
+        document.getElementById('conn-label').textContent = 'Connected';
+    });
+
+    socket.on('disconnect', () => {
+        document.getElementById('dot').className = 'status-dot idle';
+        document.getElementById('conn-label').textContent = 'Disconnected';
+    });
+
+    socket.on('update_dashboard', (agents) => {
+        const list  = document.getElementById('agent-list');
+        const count = Object.keys(agents).length;
+        list.innerHTML = '';
+        document.getElementById('agent-count').textContent =
+            count === 0 ? 'No agents' : `${count} agent${count > 1 ? 's' : ''} connected`;
+
+        for (const id in agents) {
+            const card = document.createElement('div');
+            card.className = `agent-card${selectedAgent === id ? ' active' : ''}`;
+            card.innerHTML = `
+                <div class="agent-card-name">${id}</div>
+                <div class="agent-card-host">${agents[id].hostname}</div>`;
+            card.onclick = () => {
+                selectedAgent = id;
+                document.getElementById('target-display').textContent = id;
+                document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+            };
+            list.appendChild(card);
+            if (selectedAgent === 'all') card.click();
         }
-        setInterval(updateTime, 1000);
+    });
 
-        function addLog(msg) {
-            const out = document.getElementById('terminal-output');
-            const div = document.createElement('div');
-            div.className = 'response-block';
-            div.innerHTML = msg.replace(/\[(.*?)\]/g, '<span style="color:var(--accent);">[$1]</span>');
-            out.appendChild(div);
-            out.scrollTop = out.scrollHeight;
-        }
+    socket.on('display_response', ({ output }) => addEntry(output));
 
-        socket.on('update_dashboard', (agents) => {
-            const list = document.getElementById('agent-list');
-            list.innerHTML = '';
-            for (const id in agents) {
-                const div = document.createElement('div');
-                div.className = `agent-card ${selectedAgent === id ? 'active' : ''}`;
-                div.onclick = () => {
-                    selectedAgent = id;
-                    document.getElementById('active-target').innerHTML = `TARGETING: <span style="color:var(--accent);">${id}</span>`;
-                    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
-                    div.classList.add('active');
-                };
-                div.innerHTML = `<b>${id}</b><br>${agents[id].hostname}`;
-                list.appendChild(div);
-                if (selectedAgent === 'all') div.click();
-            }
-        });
+    /* send */
+    function doScan() {
+        const input = document.getElementById('cmd');
+        const val   = input.value.trim();
+        if (!val || !socket.connected) return;
+        addEntry(`Initiating precision scan on [${val}]…`, 'INFO');
+        socket.emit('dispatch_command', { target: selectedAgent, command: val });
+        document.getElementById('dot').className = 'status-dot scanning';
+        document.getElementById('conn-label').textContent = 'Scanning…';
+        setTimeout(() => {
+            document.getElementById('dot').className = 'status-dot';
+            document.getElementById('conn-label').textContent = 'Connected';
+        }, 3000);
+        input.value = '';
+    }
 
-        socket.on('display_response', (data) => {
-            addLog(data.output);
-        });
-
-        function doSend() {
-            const input = document.getElementById('cmd-input');
-            const val = input.value.trim();
-            if (!val || !socket.connected) return;
-            socket.emit('dispatch_command', { target: selectedAgent, command: val });
-            addLog(`> Initiating Precision Scan on ${val}...`);
-            input.value = '';
-        }
-
-        document.getElementById('send-btn').onclick = doSend;
-        document.getElementById('cmd-input').onkeypress = (e) => { if(e.key === 'Enter') doSend(); };
-    </script>
+    document.getElementById('scan-btn').onclick = doScan;
+    document.getElementById('cmd').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doScan();
+    });
+</script>
 </body>
 </html>
